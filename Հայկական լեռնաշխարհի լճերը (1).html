@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="hy">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Հայկական լեռնաշխարհի լճերը</title>
+<style>
+  :root{
+    --bg:#1b1f24;
+    --panel:#242a31;
+    --text:#eef1f4;
+    --muted:#9aa4af;
+    --red:#e53e3e;
+    --blue:#3182ce;
+    --yellow:#ecc94b;
+    --grey:#8a8f96;
+    --black:#111417;
+    --grid-line:#3a4048;
+    box-sizing:border-box;
+  }
+  *{ box-sizing:border-box; }
+  html,body{
+    margin:0; padding:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    min-height:100vh;
+  }
+  body{
+    display:flex;
+    justify-content:center;
+  }
+  .app{
+    --panel-size: min(46vw, calc(100vh - 250px), 480px);
+    max-width:1100px;
+    width:100%;
+    margin:0 auto;
+    padding:14px 16px calc(20px + env(safe-area-inset-bottom,0px));
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:10px;
+  }
+  @media (min-width: 901px){
+    html,body{
+      height:100%;
+      overflow:hidden;
+    }
+    .app{
+      height:100vh;
+      justify-content:center;
+    }
+    .layout{ flex:1 1 auto; min-height:0; }
+    .main-col{ min-height:0; }
+    .board{ flex:0 1 auto; }
+  }
+  h1{
+    font-size:1.15rem;
+    margin:0;
+    text-align:center;
+  }
+  .layout{
+    width:100%;
+    display:flex;
+    flex-direction:row;
+    align-items:stretch;
+    justify-content:center;
+    gap:16px;
+  }
+  .main-col{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:10px;
+    flex:1 1 560px;
+    min-width:0;
+    max-width:560px;
+  }
+  .score-col{
+    flex:0 0 320px;
+    width:320px;
+    max-width:320px;
+    display:flex;
+    flex-direction:column;
+    background:var(--panel);
+    border-radius:14px;
+    padding:14px;
+    box-shadow:0 6px 20px rgba(0,0,0,0.35);
+  }
+  .score-title{
+    font-size:0.95rem;
+    font-weight:700;
+    color:var(--muted);
+    text-align:center;
+    margin-bottom:10px;
+  }
+  .table-wrap{
+    flex:1 1 auto;
+    display:flex;
+    min-height:0;
+    overflow:auto;
+  }
+  table.scoreboard{
+    width:100%;
+    height:100%;
+    border-collapse:collapse;
+    font-size:0.8rem;
+  }
+  table.scoreboard th, table.scoreboard td{
+    border:1px solid var(--grid-line);
+    text-align:center;
+    padding:4px 2px;
+  }
+  table.scoreboard th{
+    background:#2c333b;
+    font-weight:700;
+  }
+  table.scoreboard th.col-red{ color:var(--red); }
+  table.scoreboard th.col-blue{ color:var(--blue); }
+  table.scoreboard th.col-yellow{ color:var(--yellow); }
+  table.scoreboard td.row-num{
+    background:#2c333b;
+    font-weight:700;
+    color:var(--muted);
+  }
+  table.scoreboard input{
+    width:100%;
+    max-width:44px;
+    background:var(--black);
+    border:1px solid var(--grid-line);
+    color:var(--text);
+    border-radius:5px;
+    text-align:center;
+    font-size:0.85rem;
+    padding:3px 0;
+    font-variant-numeric:tabular-nums;
+    -moz-appearance:textfield;
+    appearance:textfield;
+  }
+  table.scoreboard input::-webkit-outer-spin-button,
+  table.scoreboard input::-webkit-inner-spin-button{
+    -webkit-appearance:none;
+    margin:0;
+  }
+  table.scoreboard tfoot td{
+    background:#2c333b;
+    font-weight:800;
+    font-size:0.85rem;
+  }
+  table.scoreboard tfoot td.total-red{ color:var(--red); }
+  table.scoreboard tfoot td.total-blue{ color:var(--blue); }
+  table.scoreboard tfoot td.total-yellow{ color:var(--yellow); }
+  .score-reset{
+    width:100%;
+    margin-top:10px;
+    padding:9px 8px;
+    border-radius:10px;
+    border:1px solid var(--grid-line);
+    background:#2c333b;
+    color:var(--text);
+    font-size:0.85rem;
+    font-weight:600;
+    cursor:pointer;
+    transition:background 0.15s ease, transform 0.08s ease;
+  }
+  .score-reset:active{ transform:scale(0.97); }
+  .score-reset:hover{ background:#343c45; }
+
+  @media (max-width: 900px){
+    .app{ --panel-size: min(92vw, 480px); }
+    .layout{ flex-direction:column; align-items:center; }
+    .score-col{
+      flex:1 1 auto;
+      width:100%;
+      max-width:560px;
+    }
+    .table-wrap{ flex:none; }
+    table.scoreboard{ height:auto; }
+  }
+  .timer-col{
+    display:flex;
+    flex-direction:row;
+    align-items:center;
+    justify-content:center;
+    flex-wrap:wrap;
+    gap:12px;
+    width:100%;
+    max-width:560px;
+    background:var(--panel);
+    border-radius:14px;
+    padding:10px 14px;
+    box-shadow:0 6px 20px rgba(0,0,0,0.35);
+  }
+  .timer-title{
+    font-size:0.9rem;
+    font-weight:700;
+    color:var(--muted);
+    white-space:nowrap;
+  }
+  .timer-display{
+    text-align:center;
+    font-size:1.6rem;
+    font-weight:800;
+    font-variant-numeric:tabular-nums;
+    background:var(--black);
+    border:2px solid var(--grid-line);
+    border-radius:10px;
+    padding:6px 18px;
+    letter-spacing:0.02em;
+    min-width:70px;
+  }
+  .timer-display.time-up{
+    color:var(--red);
+    border-color:var(--red);
+    font-size:1.15rem;
+    animation:pulse 0.9s ease-in-out infinite;
+  }
+  @keyframes pulse{
+    0%,100%{ transform:scale(1); }
+    50%{ transform:scale(1.05); }
+  }
+  .timer-col button{
+    padding:9px 16px;
+    border-radius:10px;
+    border:1px solid var(--grid-line);
+    background:#1f6f43;
+    border-color:#2c8b58;
+    color:var(--text);
+    font-size:0.9rem;
+    font-weight:600;
+    cursor:pointer;
+    transition:background 0.15s ease, transform 0.08s ease;
+    white-space:nowrap;
+  }
+  .timer-col button:active{ transform:scale(0.97); }
+  .timer-col button:hover{ background:#237d4b; }
+  .legend{
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:center;
+    gap:10px 16px;
+    background:var(--panel);
+    padding:10px 16px;
+    border-radius:14px;
+    width:100%;
+    font-size:0.85rem;
+  }
+  .legend span{ display:flex; align-items:center; gap:6px; }
+  .dot{ width:12px; height:12px; border-radius:3px; display:inline-block; }
+  .dot.red{background:var(--red);}
+  .dot.blue{background:var(--blue);}
+  .dot.yellow{background:var(--yellow);}
+  .dot.grey{background:var(--grey);}
+
+  .board{
+    display:grid;
+    grid-template-columns:repeat(7,1fr);
+    grid-template-rows:repeat(7,1fr);
+    gap:6px;
+    width:var(--panel-size);
+    height:var(--panel-size);
+    background:var(--panel);
+    padding:12px;
+    border-radius:16px;
+    box-shadow:0 6px 20px rgba(0,0,0,0.35);
+  }
+  .cell{
+    background:var(--black);
+    border-radius:6px;
+    border:1px solid var(--grid-line);
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-weight:700;
+    font-size:clamp(12px, 3vw, 20px);
+    color:#cfd6dd;
+    transition:transform 0.08s ease, background 0.15s ease;
+    user-select:none;
+  }
+  .cell:active{ transform:scale(0.9); }
+  .cell.revealed{ cursor:default; }
+  .cell[data-color="red"]{ background:var(--red); color:#fff; }
+  .cell[data-color="blue"]{ background:var(--blue); color:#fff; }
+  .cell[data-color="yellow"]{ background:var(--yellow); color:#332b00; }
+  .cell[data-color="grey"]{ background:var(--grey); color:#222; }
+
+  .controls{
+    width:100%;
+    max-width:560px;
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+  }
+  .controls button{
+    padding:12px 10px;
+    border-radius:12px;
+    border:1px solid var(--grid-line);
+    background:var(--panel);
+    color:var(--text);
+    font-size:0.9rem;
+    font-weight:600;
+    cursor:pointer;
+    transition:background 0.15s ease, transform 0.08s ease;
+  }
+  .controls button:active{ transform:scale(0.97); }
+  .controls button:hover{ background:#2c333b; }
+  .controls .full-row{ grid-column:1/-1; }
+
+  .hint{
+    font-size:0.8rem;
+    color:var(--muted);
+    text-align:center;
+    max-width:480px;
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <h1>🏔️ Հայկական լեռնաշխարհի լճերը</h1>
+
+  <div class="layout">
+    <div class="main-col">
+      <div class="legend">
+        <span><span class="dot red"></span>Կարմիր — 12</span>
+        <span><span class="dot blue"></span>Կապույտ — 12</span>
+        <span><span class="dot yellow"></span>Դեղին — 12</span>
+        <span><span class="dot grey"></span>Մոխրագույն — 13</span>
+      </div>
+
+      <div class="timer-col">
+        <div class="timer-title">⏱ Ժամացույց</div>
+        <div class="timer-display" id="timerDisplay">30</div>
+        <button id="startTimerBtn">▶ Սկիզբ</button>
+      </div>
+
+      <div class="board" id="board"></div>
+
+      <p class="hint" id="hint">Սեղմիր որևէ վանդակի համարի վրա՝ տակի գույնը տեսնելու համար։</p>
+
+      <div class="controls">
+        <button id="showAllBtn">👁 Ցույց տալ բոլորը</button>
+        <button id="hideAllBtn">⚫ Փակել բոլորը (Սև)</button>
+        <button id="newGameBtn" class="full-row">🔀 Նոր Խաղ (նոր պատահական բաշխում)</button>
+      </div>
+    </div>
+
+    <div class="score-col">
+      <div class="score-title">🏆 Մրցաշարային աղյուսակ</div>
+      <div class="table-wrap">
+      <table class="scoreboard">
+        <thead>
+          <tr>
+            <th>№</th>
+            <th class="col-red">Կարմիր</th>
+            <th class="col-blue">Կապույտ</th>
+            <th class="col-yellow">Դեղին</th>
+          </tr>
+        </thead>
+        <tbody id="scoreRows"></tbody>
+        <tfoot>
+          <tr>
+            <td>Ընդհանուր</td>
+            <td class="total-red" id="totalRed">0</td>
+            <td class="total-blue" id="totalBlue">0</td>
+            <td class="total-yellow" id="totalYellow">0</td>
+          </tr>
+        </tfoot>
+      </table>
+      </div>
+      <button class="score-reset" id="scoreResetBtn">↺ Զրոյացնել հաշիվը</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const TOTAL = 49;
+  const COUNTS = { red:12, blue:12, yellow:12, grey:13 }; // 12+12+12+13 = 49
+
+  const boardEl = document.getElementById('board');
+  const hint = document.getElementById('hint');
+  const showAllBtn = document.getElementById('showAllBtn');
+  const hideAllBtn = document.getElementById('hideAllBtn');
+  const newGameBtn = document.getElementById('newGameBtn');
+
+  let assignment = [];   // color for each index 0..63
+  let revealed = [];     // boolean per cell
+
+  function shuffledColorPool(){
+    const pool = [];
+    for(const [color, n] of Object.entries(COUNTS)){
+      for(let i=0;i<n;i++) pool.push(color);
+    }
+    // Fisher-Yates shuffle
+    for(let i=pool.length-1;i>0;i--){
+      const j = Math.floor(Math.random()*(i+1));
+      [pool[i],pool[j]] = [pool[j],pool[i]];
+    }
+    return pool;
+  }
+
+  function buildBoard(){
+    boardEl.innerHTML = '';
+    for(let i=0;i<TOTAL;i++){
+      const cell = document.createElement('div');
+      cell.className = 'cell';
+      cell.textContent = (i+1);
+      cell.dataset.index = i;
+      cell.addEventListener('click', () => revealCell(i));
+      boardEl.appendChild(cell);
+    }
+  }
+
+  function renderCell(i){
+    const cellEl = boardEl.children[i];
+    if(revealed[i]){
+      cellEl.dataset.color = assignment[i];
+      cellEl.classList.add('revealed');
+    } else {
+      delete cellEl.dataset.color;
+      cellEl.classList.remove('revealed');
+    }
+  }
+
+  function renderAll(){
+    for(let i=0;i<TOTAL;i++) renderCell(i);
+  }
+
+  function revealCell(i){
+    if(revealed[i]) return;
+    revealed[i] = true;
+    renderCell(i);
+  }
+
+  function newGame(){
+    assignment = shuffledColorPool();
+    revealed = new Array(TOTAL).fill(false);
+    renderAll();
+    hint.textContent = 'Նոր խաղ սկսվեց։ Սեղմիր որևէ վանդակի համարի վրա՝ տակի գույնը տեսնելու համար։';
+  }
+
+  showAllBtn.addEventListener('click', () => {
+    revealed = new Array(TOTAL).fill(true);
+    renderAll();
+    hint.textContent = 'Բոլոր վանդակները բացված են։';
+  });
+
+  hideAllBtn.addEventListener('click', () => {
+    revealed = new Array(TOTAL).fill(false);
+    renderAll();
+    hint.textContent = 'Բոլոր վանդակները նորից փակվեցին (Սև)։ Համարակալումը մնում է նույնը։';
+  });
+
+  newGameBtn.addEventListener('click', newGame);
+
+  // ---- Timer (30 second countdown) ----
+  const TIMER_SECONDS = 30;
+  const timerDisplay = document.getElementById('timerDisplay');
+  const startTimerBtn = document.getElementById('startTimerBtn');
+
+  let timeLeft = TIMER_SECONDS;
+  let timerInterval = null;
+
+  function renderTimer(){
+    timerDisplay.textContent = timeLeft;
+    timerDisplay.classList.remove('time-up');
+  }
+
+  function startCountdown(){
+    if(timerInterval) clearInterval(timerInterval);
+    timeLeft = TIMER_SECONDS;
+    renderTimer();
+    timerInterval = setInterval(() => {
+      timeLeft--;
+      if(timeLeft <= 0){
+        clearInterval(timerInterval);
+        timerInterval = null;
+        timerDisplay.textContent = 'Պատասխան';
+        timerDisplay.classList.add('time-up');
+      } else {
+        renderTimer();
+      }
+    }, 1000);
+  }
+
+  startTimerBtn.addEventListener('click', startCountdown);
+
+  renderTimer();
+
+  // ---- Scoreboard (12 rounds x 3 teams, auto-totaled) ----
+  const ROUNDS = 12;
+  const scoreRowsEl = document.getElementById('scoreRows');
+  const totalRedEl = document.getElementById('totalRed');
+  const totalBlueEl = document.getElementById('totalBlue');
+  const totalYellowEl = document.getElementById('totalYellow');
+  const scoreResetBtn = document.getElementById('scoreResetBtn');
+
+  function buildScoreboard(){
+    scoreRowsEl.innerHTML = '';
+    for(let r = 1; r <= ROUNDS; r++){
+      const tr = document.createElement('tr');
+
+      const numTd = document.createElement('td');
+      numTd.className = 'row-num';
+      numTd.textContent = r;
+      tr.appendChild(numTd);
+
+      ['red','blue','yellow'].forEach(color => {
+        const td = document.createElement('td');
+        const input = document.createElement('input');
+        input.type = 'number';
+        input.inputMode = 'numeric';
+        input.dataset.color = color;
+        input.dataset.round = r;
+        input.addEventListener('input', updateTotals);
+        td.appendChild(input);
+        tr.appendChild(td);
+      });
+
+      scoreRowsEl.appendChild(tr);
+    }
+  }
+
+  function updateTotals(){
+    let sums = { red:0, blue:0, yellow:0 };
+    scoreRowsEl.querySelectorAll('input').forEach(input => {
+      const val = parseFloat(input.value);
+      if(!isNaN(val)){
+        sums[input.dataset.color] += val;
+      }
+    });
+    totalRedEl.textContent = sums.red;
+    totalBlueEl.textContent = sums.blue;
+    totalYellowEl.textContent = sums.yellow;
+  }
+
+  scoreResetBtn.addEventListener('click', () => {
+    scoreRowsEl.querySelectorAll('input').forEach(input => { input.value = ''; });
+    updateTotals();
+  });
+
+  buildScoreboard();
+  updateTotals();
+
+  // Init
+  buildBoard();
+  newGame();
+})();
+</script>
+</body>
+</html>
